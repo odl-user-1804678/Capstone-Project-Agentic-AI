@@ -1,189 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="San Francisco Weather App">
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <title>San Francisco Weather App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>San Francisco Weather</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: linear-gradient(to bottom, #4facfe, #00f2fe);
+            color: #333;
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            color: #ffffff;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-top: 0.5rem;
+        }
+
+        /* Weather Information */
+        .weather-container {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .weather-container h2 {
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            color: #4facfe;
+        }
+
+        .weather-details {
+            margin: 1rem 0;
+        }
+
+        .weather-details span {
+            margin: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* 5-Day Forecast */
+        .forecast-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .forecast-item {
+            flex: 1 1 calc(20% - 1rem);
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .forecast-item h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .forecast-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0.5rem auto;
+        }
+
+        .forecast-temp {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .forecast-container {
+                flex-direction: column;
+            }
+
+            .forecast-item {
+                flex: none;
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>San Francisco Weather</h1>
-    <p id="current-date"></p>
-  </header>
+    <div id="app">
+        <header>
+            <h1>San Francisco Weather</h1>
+            <p>Stay updated with the latest weather in San Francisco</p>
+        </header>
 
-  <main>
-    <section class="current-weather">
-      <h2>Current Weather</h2>
-      <div id="current">
-        <p id="condition"></p>
-        <p id="temperature"></p>
-        <p id="humidity"></p>
-        <img id="weather-icon" alt="Weather Icon">
-      </div>
-    </section>
+        <div id="current-weather" class="weather-container">
+            <h2>Current Weather</h2>
+            <div id="current-details" class="weather-details">
+                <span id="temp"></span>
+                <span id="humidity"></span>
+                <span id="conditions"></span>
+            </div>
+        </div>
 
-    <section class="forecast">
-      <h2>5-Day Forecast</h2>
-      <div id="forecast-container">
-        <!-- Forecast cards will be dynamically added here -->
-      </div>
-    </section>
-  </main>
+        <div id="forecast" class="forecast-container">
+            <!-- Forecast items will be dynamically loaded here -->
+        </div>
+    </div>
 
-  <footer>
-    <p>Weather data provided by OpenWeatherMap</p>
-  </footer>
+    <script>
+        const API_KEY = 'YOUR_API_KEY'; // Replace with your OpenWeatherMap API key
+        const CITY = 'San Francisco';
+        const UNIT = 'imperial'; // Use 'metric' for Celsius
 
-  <script>
-    const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your OpenWeatherMap API key
+        // Fetch Weather Data
+        async function getWeatherData() {
+            const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&units=${UNIT}&appid=${API_KEY}`;
+            const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${CITY}&units=${UNIT}&appid=${API_KEY}`;
+            try {
+                const [currentResponse, forecastResponse] = await Promise.all([
+                    fetch(currentWeatherUrl),
+                    fetch(forecastUrl)
+                ]);
+                const currentWeather = await currentResponse.json();
+                const forecast = await forecastResponse.json();
+                displayCurrentWeather(currentWeather);
+                displayForecast(forecast);
+            } catch (error) {
+                alert('Failed to fetch weather data. Please try again later.');
+                console.error(error);
+            }
+        }
 
-    const initialize = async () => {
-      const city = 'San Francisco';
-      const units = 'metric'; // Change to 'imperial' for Fahrenheit
-      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${units}&appid=${API_KEY}`;
-      const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=${units}&appid=${API_KEY}`;
+        // Display Current Weather
+        function displayCurrentWeather(data) {
+            const tempEl = document.getElementById('temp');
+            const humidityEl = document.getElementById('humidity');
+            const conditionsEl = document.getElementById('conditions');
 
-      updateDate();
-      await fetchCurrentWeather(weatherUrl);
-      await fetchForecast(forecastUrl);
-    };
+            tempEl.textContent = `Temperature: ${data.main.temp}°F`;
+            humidityEl.textContent = `Humidity: ${data.main.humidity}%`;
+            conditionsEl.textContent = `Conditions: ${data.weather[0].description}`;
+        }
 
-    const updateDate = () => {
-      const currentDate = new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      document.getElementById('current-date').innerText = `Date: ${currentDate}`;
-    };
+        // Display Forecast
+        function displayForecast(data) {
+            const forecastContainer = document.getElementById('forecast');
+            forecastContainer.innerHTML = '';
 
-    const fetchCurrentWeather = async (url) => {
-      try {
-        const response = await axios.get(url);
-        const data = response.data;
+            // Group forecast data to display only one item per day (simplified approach).
+            const dailyForecasts = data.list.filter(item => item.dt_txt.includes('12:00:00'));
+            dailyForecasts.forEach(forecast => {
+                const forecastItem = document.createElement('div');
+                forecastItem.className = 'forecast-item';
+                forecastItem.innerHTML = `
+                    <h3>${new Date(forecast.dt * 1000).toLocaleDateString(undefined, { weekday: 'short' })}</h3>
+                    <img 
+                        class="forecast-icon" 
+                        src="https://openweathermap.org/img/wn/${forecast.weather[0].icon}.png" 
+                        alt="${forecast.weather[0].description}"
+                    />
+                    <div class="forecast-temp">High: ${forecast.main.temp_max}°F<br>Low: ${forecast.main.temp_min}°F</div>
+                `;
+                forecastContainer.appendChild(forecastItem);
+            });
+        }
 
-        document.getElementById('condition').innerText = `Condition: ${data.weather[0].description}`;
-        document.getElementById('temperature').innerText = `Temperature: ${Math.round(data.main.temp)}°C`;
-        document.getElementById('humidity').innerText = `Humidity: ${data.main.humidity}%`;
-        document.getElementById('weather-icon').src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
-        document.getElementById('weather-icon').alt = data.weather[0].description;
-      } catch (error) {
-        console.error('Error fetching current weather', error);
-        alert('Unable to fetch weather data.');
-      }
-    };
-
-    const fetchForecast = async (url) => {
-      try {
-        const response = await axios.get(url);
-        const data = response.data;
-        const forecastContainer = document.getElementById('forecast-container');
-        forecastContainer.innerHTML = '';
-
-        const forecastDays = data.list.filter((item) => item.dt_txt.includes('12:00:00'));
-        forecastDays.forEach((day) => {
-          const card = document.createElement('div');
-          card.classList.add('forecast-card');
-
-          const date = new Date(day.dt * 1000).toLocaleDateString('en-US', {
-            weekday: 'long'
-          });
-          const temp = Math.round(day.main.temp);
-          const condition = day.weather[0].description;
-          const icon = `https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`;
-
-          card.innerHTML = `
-            <p>${date}</p>
-            <img src="${icon}" alt="${condition}">
-            <p>${temp}°C</p>
-            <p>${condition}</p>
-          `;
-
-          forecastContainer.appendChild(card);
-        });
-      } catch (error) {
-        console.error('Error fetching forecast data', error);
-        alert('Unable to fetch forecast data.');
-      }
-    };
-
-    // Initialize the app on load
-    initialize();
-  </script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f0f8ff;
-    }
-
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    main {
-      padding: 1rem;
-    }
-
-    .current-weather, .forecast {
-      margin-bottom: 2rem;
-    }
-
-    #current {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: #e6ffe6;
-      padding: 1rem;
-      border-radius: 8px;
-    }
-
-    #forecast-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .forecast-card {
-      background-color: #cceeff;
-      padding: 1rem;
-      border-radius: 8px;
-      text-align: center;
-      flex: 1 1 calc(20% - 1rem);
-    }
-
-    footer {
-      text-align: center;
-      padding: 1rem;
-      background-color: #4CAF50;
-      color: white;
-    }
-
-    @media (max-width: 768px) {
-      #current {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .forecast-card {
-        flex: 1 1 calc(50% - 1rem);
-      }
-    }
-
-    @media (max-width: 480px) {
-      .forecast-card {
-        flex: 1 1 100%;
-      }
-    }
-  </style>
+        // Initialize App
+        getWeatherData();
+    </script>
 </body>
 </html>
