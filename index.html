@@ -1,1 +1,121 @@
-[code]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>San Francisco Weather App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f6fa;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    .weather-container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .weather-header {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .weather-data {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+    .forecast {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    .forecast-day {
+      flex: 1;
+      margin: 10px;
+      padding: 10px;
+      background-color: #eef1f5;
+      border-radius: 5px;
+    }
+    .forecast-day h4 {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="weather-container">
+    <div class="weather-header">San Francisco Weather</div>
+    <div id="current-weather" class="weather-data">Loading...</div>
+    <h3>5-Day Forecast</h3>
+    <div id="forecast" class="forecast"></div>
+  </div>
+
+  <script>
+    // OpenWeatherMap API Key
+    const API_KEY = 'your_api_key_here'; // Replace with your OpenWeatherMap key
+    const CITY = "San Francisco";
+    const UNIT = "metric"; // Celsius
+
+    // Fetch current weather
+    async function fetchCurrentWeather() {
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&units=${UNIT}&appid=${API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const weatherDiv = document.getElementById('current-weather');
+      weatherDiv.innerHTML = `
+        ${data.weather[0].description.toUpperCase()}<br>
+        Temperature: ${data.main.temp}°C<br>
+        Humidity: ${data.main.humidity}%<br>
+        Wind Speed: ${data.wind.speed} m/s
+      `;
+    }
+
+    // Fetch 5-day forecast
+    async function fetchForecast() {
+      const url = `https://api.openweathermap.org/data/2.5/forecast?q=${CITY}&units=${UNIT}&appid=${API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const forecastDiv = document.getElementById('forecast');
+      forecastDiv.innerHTML = ""; // Clear previous forecast
+      const dailyForecasts = {};
+
+      // Aggregate daily average temp & conditions from 3-hourly data
+      data.list.forEach(item => {
+        const date = item.dt_txt.split(" ")[0];
+        if (!dailyForecasts[date]) {
+          dailyForecasts[date] = { temps: [], conditions: [] };
+        }
+        dailyForecasts[date].temps.push(item.main.temp);
+        dailyForecasts[date].conditions.push(item.weather[0].main);
+      });
+
+      // Display 5-day forecast
+      Object.keys(dailyForecasts).slice(0, 5).forEach(date => {
+        const temps = dailyForecasts[date].temps;
+        const condition = dailyForecasts[date].conditions[0];
+        const avgTemp = (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1);
+
+        forecastDiv.innerHTML += `
+          <div class="forecast-day">
+            <h4>${date}</h4>
+            <p>${condition}</p>
+            <p>Avg Temp: ${avgTemp}°C</p>
+          </div>
+        `;
+      });
+    }
+
+    // Initialize App
+    async function initApp() {
+      await fetchCurrentWeather();
+      await fetchForecast();
+    }
+    initApp();
+  </script>
+</body>
+</html>
