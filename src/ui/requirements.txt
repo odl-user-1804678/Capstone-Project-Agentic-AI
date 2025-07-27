@@ -1,8 +1,0 @@
-semantic-kernel
-asyncio
-python-dotenv
-azure-search-documents
-fastapi
-pandas
-uvicorn
-streamlit
