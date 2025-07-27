@@ -3,119 +3,187 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="San Francisco Weather App">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <title>San Francisco Weather App</title>
+</head>
+<body>
+  <header>
+    <h1>San Francisco Weather</h1>
+    <p id="current-date"></p>
+  </header>
+
+  <main>
+    <section class="current-weather">
+      <h2>Current Weather</h2>
+      <div id="current">
+        <p id="condition"></p>
+        <p id="temperature"></p>
+        <p id="humidity"></p>
+        <img id="weather-icon" alt="Weather Icon">
+      </div>
+    </section>
+
+    <section class="forecast">
+      <h2>5-Day Forecast</h2>
+      <div id="forecast-container">
+        <!-- Forecast cards will be dynamically added here -->
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Weather data provided by OpenWeatherMap</p>
+  </footer>
+
+  <script>
+    const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your OpenWeatherMap API key
+
+    const initialize = async () => {
+      const city = 'San Francisco';
+      const units = 'metric'; // Change to 'imperial' for Fahrenheit
+      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${units}&appid=${API_KEY}`;
+      const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=${units}&appid=${API_KEY}`;
+
+      updateDate();
+      await fetchCurrentWeather(weatherUrl);
+      await fetchForecast(forecastUrl);
+    };
+
+    const updateDate = () => {
+      const currentDate = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      document.getElementById('current-date').innerText = `Date: ${currentDate}`;
+    };
+
+    const fetchCurrentWeather = async (url) => {
+      try {
+        const response = await axios.get(url);
+        const data = response.data;
+
+        document.getElementById('condition').innerText = `Condition: ${data.weather[0].description}`;
+        document.getElementById('temperature').innerText = `Temperature: ${Math.round(data.main.temp)}°C`;
+        document.getElementById('humidity').innerText = `Humidity: ${data.main.humidity}%`;
+        document.getElementById('weather-icon').src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+        document.getElementById('weather-icon').alt = data.weather[0].description;
+      } catch (error) {
+        console.error('Error fetching current weather', error);
+        alert('Unable to fetch weather data.');
+      }
+    };
+
+    const fetchForecast = async (url) => {
+      try {
+        const response = await axios.get(url);
+        const data = response.data;
+        const forecastContainer = document.getElementById('forecast-container');
+        forecastContainer.innerHTML = '';
+
+        const forecastDays = data.list.filter((item) => item.dt_txt.includes('12:00:00'));
+        forecastDays.forEach((day) => {
+          const card = document.createElement('div');
+          card.classList.add('forecast-card');
+
+          const date = new Date(day.dt * 1000).toLocaleDateString('en-US', {
+            weekday: 'long'
+          });
+          const temp = Math.round(day.main.temp);
+          const condition = day.weather[0].description;
+          const icon = `https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`;
+
+          card.innerHTML = `
+            <p>${date}</p>
+            <img src="${icon}" alt="${condition}">
+            <p>${temp}°C</p>
+            <p>${condition}</p>
+          `;
+
+          forecastContainer.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Error fetching forecast data', error);
+        alert('Unable to fetch forecast data.');
+      }
+    };
+
+    // Initialize the app on load
+    initialize();
+  </script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f3f6fa;
       margin: 0;
       padding: 0;
+      background-color: #f0f8ff;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 1rem;
       text-align: center;
     }
-    .weather-container {
-      max-width: 600px;
-      margin: 50px auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+    main {
+      padding: 1rem;
     }
-    .weather-header {
-      font-size: 24px;
-      font-weight: bold;
+
+    .current-weather, .forecast {
+      margin-bottom: 2rem;
     }
-    .weather-data {
-      font-size: 18px;
-      margin: 10px 0;
-    }
-    .forecast {
+
+    #current {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      margin-top: 20px;
+      background-color: #e6ffe6;
+      padding: 1rem;
+      border-radius: 8px;
     }
-    .forecast-day {
-      flex: 1;
-      margin: 10px;
-      padding: 10px;
-      background-color: #eef1f5;
-      border-radius: 5px;
+
+    #forecast-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
-    .forecast-day h4 {
-      margin: 0;
+
+    .forecast-card {
+      background-color: #cceeff;
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+      flex: 1 1 calc(20% - 1rem);
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    @media (max-width: 768px) {
+      #current {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .forecast-card {
+        flex: 1 1 calc(50% - 1rem);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .forecast-card {
+        flex: 1 1 100%;
+      }
     }
   </style>
-</head>
-<body>
-  <div class="weather-container">
-    <div class="weather-header">San Francisco Weather</div>
-    <div id="current-weather" class="weather-data">Loading...</div>
-    <h3>5-Day Forecast</h3>
-    <div id="forecast" class="forecast"></div>
-  </div>
-
-  <script>
-    // OpenWeatherMap API Key
-    const API_KEY = 'your_api_key_here'; // Replace with your OpenWeatherMap key
-    const CITY = "San Francisco";
-    const UNIT = "metric"; // Celsius
-
-    // Fetch current weather
-    async function fetchCurrentWeather() {
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&units=${UNIT}&appid=${API_KEY}`;
-      const response = await fetch(url);
-      const data = await response.json();
-
-      const weatherDiv = document.getElementById('current-weather');
-      weatherDiv.innerHTML = `
-        ${data.weather[0].description.toUpperCase()}<br>
-        Temperature: ${data.main.temp}°C<br>
-        Humidity: ${data.main.humidity}%<br>
-        Wind Speed: ${data.wind.speed} m/s
-      `;
-    }
-
-    // Fetch 5-day forecast
-    async function fetchForecast() {
-      const url = `https://api.openweathermap.org/data/2.5/forecast?q=${CITY}&units=${UNIT}&appid=${API_KEY}`;
-      const response = await fetch(url);
-      const data = await response.json();
-
-      const forecastDiv = document.getElementById('forecast');
-      forecastDiv.innerHTML = ""; // Clear previous forecast
-      const dailyForecasts = {};
-
-      // Aggregate daily average temp & conditions from 3-hourly data
-      data.list.forEach(item => {
-        const date = item.dt_txt.split(" ")[0];
-        if (!dailyForecasts[date]) {
-          dailyForecasts[date] = { temps: [], conditions: [] };
-        }
-        dailyForecasts[date].temps.push(item.main.temp);
-        dailyForecasts[date].conditions.push(item.weather[0].main);
-      });
-
-      // Display 5-day forecast
-      Object.keys(dailyForecasts).slice(0, 5).forEach(date => {
-        const temps = dailyForecasts[date].temps;
-        const condition = dailyForecasts[date].conditions[0];
-        const avgTemp = (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1);
-
-        forecastDiv.innerHTML += `
-          <div class="forecast-day">
-            <h4>${date}</h4>
-            <p>${condition}</p>
-            <p>Avg Temp: ${avgTemp}°C</p>
-          </div>
-        `;
-      });
-    }
-
-    // Initialize App
-    async function initApp() {
-      await fetchCurrentWeather();
-      await fetchForecast();
-    }
-    initApp();
-  </script>
 </body>
 </html>
