@@ -5,156 +5,104 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weather App</title>
   <style>
-    * {
+    body {
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: #e3f2fd;
-      color: #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
       text-align: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      padding: 20px;
-      background: white;
-      border-radius: 10px;
+    }
+    .container {
+      margin: 20px;
       max-width: 500px;
-      width: 90%;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
     }
-
-    .title {
-      font-size: 1.8rem;
+    h1 {
+      font-size: 2.5rem;
       margin-bottom: 20px;
     }
-
-    .search-bar {
-      margin-bottom: 20px;
-    }
-
-    .search-bar input {
+    input[type="text"] {
+      width: calc(100% - 22px);
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      margin-bottom: 15px;
       font-size: 1rem;
-      padding: 10px 15px;
-      width: 80%;
-      border: 1px solid #999;
-      border-radius: 5px;
-      outline: none;
     }
-
-    .weather-info {
-      display: none;
-      margin-top: 15px;
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #ff8c42;
+      color: white;
     }
-
-    .weather-info .icon {
-      width: 80px;
+    .weather-data {
+      margin-top: 20px;
     }
-
-    .error {
-      color: red;
-      margin-top: 10px;
-    }
-
-    @media (max-width: 600px) {
-      .title {
-        font-size: 1.5rem;
-      }
-
-      .search-bar input {
-        width: 100%;
-        font-size: 0.9rem;
-      }
+    .weather-data div {
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 class="title">Simple Weather App</h1>
-    
-    <div class="search-bar">
-      <input id="city-input" type="text" placeholder="Enter city name...">
-      <button id="search-btn">Search</button>
-    </div>
-    
-    <div id="weather-info" class="weather-info">
-      <h2 id="city-name"></h2>
-      <img id="weather-icon" class="icon" alt="Weather Icon">
-      <p id="temperature"></p>
-      <p id="condition"></p>
-      <p id="humidity"></p>
-      <p id="wind"></p>
-    </div>
-    
-    <p id="error-message" class="error"></p>
+    <h1>Weather App</h1>
+    <input id="cityInput" type="text" placeholder="Enter city name">
+    <button id="getWeatherBtn">Get Weather</button>
+    <div id="errorMessage" style="display: none; color: red; margin-top: 20px;"></div>
+    <div id="weatherData" class="weather-data"></div>
   </div>
 
   <script>
-    // OpenWeatherMap API Key and Configuration
-    const apiKey = 'YOUR_API_KEY_HERE'; // Replace with your API key
-    const apiUrl = 'https://api.openweathermap.org/data/2.5/weather';
+    const apiKey = 'your_api_key_here'; // Replace with your OpenWeatherMap API key
 
-    // Selecting DOM Elements
-    const cityInput = document.getElementById('city-input');
-    const searchBtn = document.getElementById('search-btn');
-    const weatherInfo = document.getElementById('weather-info');
-    const errorMessage = document.getElementById('error-message');
-    
-    const cityName = document.getElementById('city-name');
-    const weatherIcon = document.getElementById('weather-icon');
-    const temperature = document.getElementById('temperature');
-    const condition = document.getElementById('condition');
-    const humidity = document.getElementById('humidity');
-    const wind = document.getElementById('wind');
+    const getWeatherBtn = document.getElementById('getWeatherBtn');
+    const cityInput = document.getElementById('cityInput');
+    const weatherDataDiv = document.getElementById('weatherData');
+    const errorMessageDiv = document.getElementById('errorMessage');
 
-    // Event Listener for Search Button
-    searchBtn.addEventListener('click', fetchWeather);
-
-    async function fetchWeather() {
-      const city = cityInput.value.trim();
-      if (!city) {
-        displayError('Please enter a city name!');
+    getWeatherBtn.addEventListener('click', async () => {
+      const cityName = cityInput.value.trim();
+      if (!cityName) {
+        errorMessageDiv.textContent = 'Please enter a city name.';
+        errorMessageDiv.style.display = 'block';
+        weatherDataDiv.innerHTML = '';
         return;
       }
 
+      errorMessageDiv.style.display = 'none';
+
       try {
-        const response = await fetch(`${apiUrl}?q=${city}&appid=${apiKey}&units=metric`);
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&units=metric`
+        );
         if (!response.ok) {
-          throw new Error('City not found!');
+          throw new Error('City not found.');
         }
 
         const data = await response.json();
-        displayWeather(data);
+        
+        const html = `
+          <div><strong>City:</strong> ${data.name}</div>
+          <div><strong>Temperature:</strong> ${data.main.temp}°C</div>
+          <div><strong>Weather:</strong> ${data.weather[0].description}</div>
+          <div><strong>Feels like:</strong> ${data.main.feels_like}°C</div>
+          <div><strong>Humidity:</strong> ${data.main.humidity}%</div>
+        `;
+        weatherDataDiv.innerHTML = html;
       } catch (error) {
-        displayError(error.message);
+        errorMessageDiv.textContent = error.message || 'An error occurred. Please try again.';
+        errorMessageDiv.style.display = 'block';
+        weatherDataDiv.innerHTML = '';
       }
-    }
-
-    // Display Weather Data
-    function displayWeather(data) {
-      errorMessage.textContent = '';
-      weatherInfo.style.display = 'block';
-
-      cityName.textContent = `${data.name}, ${data.sys.country}`;
-      weatherIcon.src = `http://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
-      temperature.textContent = `Temperature: ${data.main.temp}°C`;
-      condition.textContent = `Condition: ${data.weather[0].description}`;
-      humidity.textContent = `Humidity: ${data.main.humidity}%`;
-      wind.textContent = `Wind Speed: ${data.wind.speed} m/s`;
-    }
-
-    // Error Handling
-    function displayError(message) {
-      weatherInfo.style.display = 'none';
-      errorMessage.textContent = message;
-    }
+    });
   </script>
 </body>
 </html>
